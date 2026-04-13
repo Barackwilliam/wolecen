@@ -18,11 +18,11 @@
        DESIGN TOKENS
     ═══════════════════════════════════════════ */
     :root {
-      --p:       #0A2463;   /* primary navy */
-      --p2:      #1B3F8A;   /* secondary navy */
-      --p3:      #D4E1FF;   /* tint */
-      --gold:    #F0A500;   /* gold accent */
-      --gold2:   #FFC845;   /* light gold */
+      --p:       #0A2463;
+      --p2:      #1B3F8A;
+      --p3:      #D4E1FF;
+      --gold:    #F0A500;
+      --gold2:   #FFC845;
       --danger:  #E63946;
       --success: #12B886;
       --warn:    #F59E0B;
@@ -73,7 +73,6 @@
       transition: transform 0.3s cubic-bezier(.4,0,.2,1), visibility 0.3s;
       overflow-y: auto;
       scrollbar-width: none;
-      /* subtle texture */
       background-image: radial-gradient(circle at 80% 10%, rgba(255,255,255,0.04) 0%, transparent 50%),
                         radial-gradient(circle at 20% 90%, rgba(240,165,0,0.05) 0%, transparent 50%);
     }
@@ -221,16 +220,23 @@
       margin-top: 1px;
     }
 
-    /* Sidebar overlay (mobile) */
+    /* ═══════════════════════════════════════════
+       SIDEBAR OVERLAY — FIX: default display:none
+    ═══════════════════════════════════════════ */
     .sb-overlay {
-      display: none;
+      display: none;               /* ← FIX: was display:block — caused overlay to always block taps */
       position: fixed;
       inset: 0;
       background: rgba(5,15,40,0.55);
       z-index: 1050;
       backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
       opacity: 0;
       transition: opacity 0.3s;
+    }
+    .sb-overlay.open {
+      display: block;
+      opacity: 1;
     }
 
     /* ═══════════════════════════════════════════
@@ -354,8 +360,6 @@
     }
     .card-header i { color: var(--muted); font-size: 15px; }
     .card-body { padding: 20px; }
-
-    /* Glass card variant */
     .card-glass {
       background: rgba(255,255,255,0.7);
       backdrop-filter: blur(20px);
@@ -374,10 +378,7 @@
       overflow: hidden;
       transition: transform 0.2s, box-shadow 0.2s;
     }
-    .stat-card:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-lg);
-    }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
     .stat-card::after {
       content: '';
       position: absolute;
@@ -388,7 +389,6 @@
     .stat-card.success::after  { background: linear-gradient(90deg, var(--success), #0ca678); }
     .stat-card.warning::after  { background: linear-gradient(90deg, var(--warn), #d97706); }
     .stat-card.danger::after   { background: linear-gradient(90deg, var(--danger), #c92a2a); }
-
     .stat-card .bg-icon {
       position: absolute;
       top: 14px; right: 14px;
@@ -461,24 +461,20 @@
       letter-spacing: 0.1px;
       white-space: nowrap;
     }
-    .badge-s::before {
-      content: '';
-      width: 5px; height: 5px;
-      border-radius: 50%;
-    }
-    .bs-draft    { background: #F1F3F7; color: #4A5568; }
+    .badge-s::before { content: ''; width: 5px; height: 5px; border-radius: 50%; }
+    .bs-draft     { background: #F1F3F7; color: #4A5568; }
     .bs-draft::before { background: #A0AEC0; }
-    .bs-submitted{ background: #EBF4FF; color: #2563EB; }
+    .bs-submitted { background: #EBF4FF; color: #2563EB; }
     .bs-submitted::before { background: #3B82F6; }
-    .bs-approved { background: #ECFDF5; color: #059669; }
+    .bs-approved  { background: #ECFDF5; color: #059669; }
     .bs-approved::before { background: var(--success); }
-    .bs-rejected { background: #FFF1F2; color: #BE123C; }
+    .bs-rejected  { background: #FFF1F2; color: #BE123C; }
     .bs-rejected::before { background: var(--danger); }
-    .bs-paid     { background: #F0FDF9; color: #0F766E; }
+    .bs-paid      { background: #F0FDF9; color: #0F766E; }
     .bs-paid::before { background: #14B8A6; }
-    .bs-pending  { background: #FFFBEB; color: #B45309; }
+    .bs-pending   { background: #FFFBEB; color: #B45309; }
     .bs-pending::before { background: var(--warn); }
-    .bs-closed   { background: #F8FAFC; color: #475569; }
+    .bs-closed    { background: #F8FAFC; color: #475569; }
     .bs-closed::before { background: #94A3B8; }
 
     /* ═══════════════════════════════════════════
@@ -655,8 +651,8 @@
       color: var(--muted);
       transition: all 0.2s;
     }
-    .wf-step.done .wf-circle   { background: var(--success); border-color: var(--success); color: #fff; }
-    .wf-step.active .wf-circle { background: var(--p); border-color: var(--p); color: #fff; box-shadow: 0 0 0 4px rgba(10,36,99,0.12); }
+    .wf-step.done .wf-circle     { background: var(--success); border-color: var(--success); color: #fff; }
+    .wf-step.active .wf-circle   { background: var(--p); border-color: var(--p); color: #fff; box-shadow: 0 0 0 4px rgba(10,36,99,0.12); }
     .wf-step.rejected .wf-circle { background: var(--danger); border-color: var(--danger); color: #fff; }
     .wf-label {
       font-size: 10px;
@@ -674,12 +670,7 @@
     /* ═══════════════════════════════════════════
        PROGRESS BAR
     ═══════════════════════════════════════════ */
-    .prog {
-      height: 5px;
-      border-radius: 3px;
-      background: var(--border);
-      overflow: hidden;
-    }
+    .prog { height: 5px; border-radius: 3px; background: var(--border); overflow: hidden; }
     .prog .bar {
       height: 100%;
       background: linear-gradient(90deg, var(--p) 0%, var(--success) 100%);
@@ -707,11 +698,11 @@
       border-radius: 50%;
       border: 2.5px solid #fff;
     }
-    .tl-dot.success  { background: var(--success); box-shadow: 0 0 0 3px rgba(18,184,134,0.15); }
-    .tl-dot.danger   { background: var(--danger);  box-shadow: 0 0 0 3px rgba(230,57,70,0.15); }
-    .tl-dot.primary  { background: var(--p);       box-shadow: 0 0 0 3px rgba(10,36,99,0.12); }
-    .tl-dot.warning  { background: var(--warn);    box-shadow: 0 0 0 3px rgba(245,158,11,0.15); }
-    .tl-dot.info     { background: #3B82F6; }
+    .tl-dot.success { background: var(--success); box-shadow: 0 0 0 3px rgba(18,184,134,0.15); }
+    .tl-dot.danger  { background: var(--danger);  box-shadow: 0 0 0 3px rgba(230,57,70,0.15); }
+    .tl-dot.primary { background: var(--p);       box-shadow: 0 0 0 3px rgba(10,36,99,0.12); }
+    .tl-dot.warning { background: var(--warn);    box-shadow: 0 0 0 3px rgba(245,158,11,0.15); }
+    .tl-dot.info    { background: #3B82F6; }
     .tl-title { font-size: 13px; font-weight: 600; line-height: 1.3; }
     .tl-meta  { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
     .tl-body  { font-size: 13px; color: #4B5563; margin-top: 4px; font-style: italic; }
@@ -735,7 +726,7 @@
     }
 
     /* ═══════════════════════════════════════════
-       MESSAGES / TOASTS
+       TOASTS
     ═══════════════════════════════════════════ */
     .toast-stack {
       position: fixed;
@@ -780,7 +771,7 @@
     .toast-item.info i    { color: #3B82F6; }
 
     /* ═══════════════════════════════════════════
-       MOBILE BOTTOM NAV
+       MOBILE BOTTOM NAV — FIX: z-index 1200
     ═══════════════════════════════════════════ */
     .bottom-nav {
       display: none;
@@ -789,8 +780,9 @@
       height: 64px;
       background: rgba(255,255,255,0.96);
       backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border-top: 1px solid var(--border);
-      z-index: 800;
+      z-index: 1200;              /* ← FIX: was 800, raised above overlay (1050) */
       justify-content: space-around;
       align-items: center;
       padding: 0 4px;
@@ -810,11 +802,13 @@
       border: none;
       background: none;
       cursor: pointer;
+      /* FIX: ensure tap area is accessible */
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
     .bn-item i { font-size: 20px; }
     .bn-item span { font-size: 9.5px; font-weight: 600; letter-spacing: 0.3px; }
     .bn-item.active { color: var(--p); }
-    .bn-item.active i { font-variation-settings: 'FILL' 1; }
     .bn-item .bn-dot {
       position: absolute;
       top: 6px; right: calc(50% - 12px);
@@ -838,6 +832,8 @@
       border: none;
       cursor: pointer;
       margin-bottom: 4px;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
     .bn-fab:hover { background: var(--p2); color: #fff; transform: scale(1.05); }
 
@@ -857,7 +853,6 @@
     .bg-surf { background: var(--surf) !important; }
     .mono    { font-family: 'Fira Code', 'Consolas', monospace; }
 
-    /* Divider label */
     .divider-label {
       display: flex;
       align-items: center;
@@ -876,7 +871,6 @@
       background: var(--border);
     }
 
-    /* Page header */
     .page-hd {
       display: flex;
       align-items: flex-start;
@@ -896,7 +890,7 @@
     .page-hd p { color: var(--muted); font-size: 13px; margin: 4px 0 0; }
 
     /* ═══════════════════════════════════════════
-       RESPONSIVE — MOBILE FIRST
+       RESPONSIVE — MOBILE
     ═══════════════════════════════════════════ */
     @media (max-width: 767px) {
       :root { --topbar-h: 56px; }
@@ -909,16 +903,8 @@
         transform: translateX(0);
         visibility: visible;
       }
-      .sb-overlay.open {
-        display: block;
-        opacity: 1;
-      }
-      .sb-overlay { display: block; }
 
-      .topbar {
-        left: 0;
-        padding: 0 14px;
-      }
+      .topbar { left: 0; padding: 0 14px; }
       .tb-btn.menu-btn { display: flex; }
       .btn-new.desktop-only { display: none; }
 
@@ -927,13 +913,11 @@
 
       .bottom-nav { display: flex; }
 
-      /* Stack cards on mobile */
       .stat-card .stat-value { font-size: 24px; }
       .page-hd h4 { font-size: 18px; }
       .card-body { padding: 14px; }
       .card-header { padding: 12px 14px; }
 
-      /* Table scroll on mobile */
       .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
       .toast-stack { top: 64px; }
@@ -943,18 +927,15 @@
       .page { padding: 12px 10px 80px; }
     }
 
-    /* Print */
     @media print {
       .sidebar, .topbar, .bottom-nav { display: none !important; }
       .main { margin-left: 0 !important; padding-top: 0 !important; }
     }
 
     /* ═══════════════════════════════════════════
-       ENTER ANIMATIONS
+       ANIMATIONS
     ═══════════════════════════════════════════ */
-    .fade-up {
-      animation: fade-up 0.4s cubic-bezier(.4,0,.2,1) both;
-    }
+    .fade-up { animation: fade-up 0.4s cubic-bezier(.4,0,.2,1) both; }
     @keyframes fade-up {
       from { opacity: 0; transform: translateY(12px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -965,7 +946,6 @@
     .stat-card:nth-child(3) { animation-delay: 0.15s; }
     .stat-card:nth-child(4) { animation-delay: 0.20s; }
 
-    /* Skeleton loader */
     .skeleton {
       background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
       background-size: 200% 100%;
@@ -1093,13 +1073,6 @@
           <i class="bi bi-people"></i> User Management
         </a>
       </li>
-      {% comment %}
-      <li>
-        <a href="/admin/">
-          <i class="bi bi-gear"></i> System Admin
-        </a>
-      </li>
-      {% endcomment %}
     </ul>
   </div>
   {% endif %}
@@ -1185,12 +1158,12 @@
   {% else %}
   <div style="width:48px"></div>
   {% endif %}
-  <button class="bn-item" onclick="document.getElementById('sidebar').classList.add('open');document.getElementById('sbOverlay').classList.add('open')">
+  <button class="bn-item" onclick="openSidebar()">
     <i class="bi bi-bell{% if notification_count %}-fill{% endif %}"></i>
     {% if notification_count %}<span class="bn-dot"></span>{% endif %}
     <span>Alerts</span>
   </button>
-  <button class="bn-item" onclick="document.getElementById('sidebar').classList.add('open');document.getElementById('sbOverlay').classList.add('open')">
+  <button class="bn-item" onclick="openSidebar()">
     <i class="bi bi-list"></i>
     <span>Menu</span>
   </button>
@@ -1199,28 +1172,49 @@
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  // Sidebar toggle
-  const sidebar  = document.getElementById('sidebar');
-  const overlay  = document.getElementById('sbOverlay');
-  const menuBtn  = document.getElementById('menuBtn');
+  // ── Sidebar toggle ──────────────────────────────
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sbOverlay');
+  const menuBtn = document.getElementById('menuBtn');
 
-  function openSidebar()  { sidebar.classList.add('open');  overlay.classList.add('open');  }
-  function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('open'); }
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden'; // prevent background scroll
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
 
   menuBtn?.addEventListener('click', openSidebar);
   overlay?.addEventListener('click', closeSidebar);
 
-  // Auto-dismiss toasts
+  // Close sidebar when a nav link is tapped on mobile
+  sidebar?.querySelectorAll('.sb-nav a').forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth < 768) closeSidebar();
+    });
+  });
+
+  // ── Auto-dismiss toasts ──────────────────────────
   document.querySelectorAll('.toast-item').forEach((el, i) => {
-    setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(20px)'; }, 4500 + i * 200);
+    setTimeout(() => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateX(20px)';
+    }, 4500 + i * 200);
     setTimeout(() => el.remove(), 5000 + i * 200);
   });
 
-  // Active link highlight on mobile bottom nav
-  document.querySelectorAll('.bn-item').forEach(el => {
-    if (el.href && window.location.pathname.startsWith(new URL(el.href, location).pathname) && el.href !== '#') {
-      el.classList.add('active');
-    }
+  // ── Active bottom nav highlight ──────────────────
+  document.querySelectorAll('.bn-item[href]').forEach(el => {
+    try {
+      if (window.location.pathname.startsWith(new URL(el.href, location).pathname) && el.href !== '#') {
+        el.classList.add('active');
+      }
+    } catch(e) {}
   });
 </script>
 {% block extra_js %}{% endblock %}
