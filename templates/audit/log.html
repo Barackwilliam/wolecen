@@ -1,0 +1,101 @@
+{% extends "base/base.html" %}
+{% block title %}Audit Log — Wolecen EGL{% endblock %}
+{% block page_title %}Audit Trail{% endblock %}
+
+{% block content %}
+
+<div class="page-hd fade-up">
+  <div>
+    <h4>Audit Trail</h4>
+    <p>Complete system activity log · {{ total }} record{{ total|pluralize }}</p>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4 fade-up" style="animation-delay:0.06s">
+  <div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-12 col-sm-6 col-md-4">
+        <label class="form-label">Search</label>
+        <div style="position:relative">
+          <i class="bi bi-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none"></i>
+          <input type="text" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="User, object…" style="padding-left:32px">
+        </div>
+      </div>
+      <div class="col-6 col-sm-3 col-md-3">
+        <label class="form-label">Event Type</label>
+        <select name="event_type" class="form-select">
+          <option value="">All Events</option>
+          {% for value, label in event_choices %}
+          <option value="{{ value }}" {% if request.GET.event_type == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-sm-3 col-md-3">
+        <label class="form-label">From Date</label>
+        <input type="date" name="date_from" value="{{ request.GET.date_from }}" class="form-control">
+      </div>
+      <div class="col-12 col-md-2">
+        <button type="submit" class="btn-w w-100"><i class="bi bi-funnel-fill"></i> Filter</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card fade-up" style="animation-delay:0.10s">
+  <div class="tbl-wrap">
+    <table class="table tbl mb-0">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Event</th>
+          <th>User</th>
+          <th>Object</th>
+          <th>IP Address</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in page_obj %}
+        <tr>
+          <td style="font-size:12px;white-space:nowrap;color:var(--muted)">{{ log.timestamp|date:"d M Y H:i:s" }}</td>
+          <td>
+            <span style="font-size:10.5px;padding:3px 9px;border-radius:5px;font-weight:700;
+              {% if log.event_type == 'LOGIN' %}background:#EFF6FF;color:#1E40AF
+              {% elif log.event_type == 'LOGOUT' %}background:var(--surf);color:var(--muted)
+              {% elif log.event_type == 'LOGIN_FAILED' %}background:#FFF1F2;color:#BE123C
+              {% elif log.event_type == 'APPROVE' %}background:#ECFDF5;color:#064E3B
+              {% elif log.event_type == 'REJECT' %}background:#FFF1F2;color:#BE123C
+              {% elif log.event_type == 'CREATE' %}background:#F5F3FF;color:#4C1D95
+              {% elif log.event_type == 'EXPORT' %}background:#FFFBEB;color:#92400E
+              {% else %}background:var(--surf);color:var(--muted){% endif %}">
+              {{ log.event_type }}
+            </span>
+          </td>
+          <td>
+            <div style="font-size:13px;font-weight:600">{{ log.user.get_full_name|default:"System" }}</div>
+            <div style="font-size:11px;color:var(--muted)">{{ log.user.email|default:"—" }}</div>
+          </td>
+          <td>
+            <div style="font-size:12.5px">{{ log.object_repr|truncatechars:45|default:"—" }}</div>
+            {% if log.model_name %}<div style="font-size:11px;color:var(--muted)">{{ log.model_name }}</div>{% endif %}
+          </td>
+          <td class="mono" style="font-size:12px;color:var(--muted)">{{ log.ip_address|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center py-5" style="color:var(--muted)">No audit records found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page_obj.has_other_pages %}
+  <div style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);flex-wrap:wrap;gap:10px">
+    <span style="font-size:12.5px;color:var(--muted)">{{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</span>
+    <div class="d-flex gap-1">
+      {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}" class="btn-icon"><i class="bi bi-chevron-left" style="font-size:12px"></i></a>{% endif %}
+      {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}" class="btn-icon"><i class="bi bi-chevron-right" style="font-size:12px"></i></a>{% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

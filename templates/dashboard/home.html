@@ -1,0 +1,269 @@
+{% extends "base/base.html" %}
+{% load humanize %}
+
+{% block title %}Dashboard — Wolecen EGL{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- ── Page Header ── -->
+<div class="page-hd fade-up">
+  <div>
+    <h4>
+      {% now "G" as hour %}
+      {% if hour < 12 %}Good morning{% elif hour < 17 %}Good afternoon{% else %}Good evening{% endif %},
+      {{ user.first_name }} 👋
+    </h4>
+    <p>{{ user.get_role_display }} · {% now "l, d F Y" %}</p>
+  </div>
+  {% if user.is_requester or user.is_system_admin %}
+  <a href="{% url 'payments:create' %}" class="btn-w">
+    <i class="bi bi-plus-lg"></i> New Payment Request
+  </a>
+  {% endif %}
+</div>
+
+<!-- ── Stat Cards ── -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card primary">
+      <i class="bi bi-file-earmark-text-fill bg-icon"></i>
+      <div class="stat-icon primary"><i class="bi bi-file-earmark-text-fill"></i></div>
+      <div class="stat-value">{{ stats.total }}</div>
+      <div class="stat-label">Total Requests</div>
+      <div class="stat-sub neu"><i class="bi bi-clock me-1"></i>All time</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card warning">
+      <i class="bi bi-hourglass-split bg-icon"></i>
+      <div class="stat-icon warning"><i class="bi bi-hourglass-split"></i></div>
+      <div class="stat-value">{{ stats.pending }}</div>
+      <div class="stat-label">Pending Action</div>
+      <div class="stat-sub neu">Awaiting review</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card success">
+      <i class="bi bi-check-circle-fill bg-icon"></i>
+      <div class="stat-icon success"><i class="bi bi-check-circle-fill"></i></div>
+      <div class="stat-value">{{ stats.paid }}</div>
+      <div class="stat-label">Payments Made</div>
+      <div class="stat-sub up"><i class="bi bi-arrow-up-short"></i>This month</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card danger">
+      <i class="bi bi-receipt-cutoff bg-icon"></i>
+      <div class="stat-icon danger"><i class="bi bi-receipt-cutoff"></i></div>
+      <div class="stat-value">{{ stats.retirement_pending }}</div>
+      <div class="stat-label">Retirements Due</div>
+      {% if stats.retirement_pending > 0 %}
+      <div class="stat-sub down"><i class="bi bi-exclamation-circle"></i> Action needed</div>
+      {% else %}
+      <div class="stat-sub neu">All clear</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- ── Amount Summary ── -->
+<div class="card mb-4 fade-up" style="animation-delay:0.18s">
+  <div class="card-body p-0">
+    <div class="row g-0">
+      <div class="col-12 col-md-4">
+        <div style="padding:22px 24px;border-bottom:1px solid var(--border)" class="d-md-none"></div>
+        <div style="padding:22px 24px;border-right:1px solid var(--border)" class="d-none d-md-block text-center">
+          <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700">Total Requested (Month)</div>
+          <div class="amt mt-2"><span class="amt-cur">TZS </span>{{ stats.total_amount_month|floatformat:0|intcomma }}</div>
+        </div>
+      </div>
+      <div class="col-12 col-md-4">
+        <div style="padding:22px 24px" class="d-md-none">
+          <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700">Total Requested (Month)</div>
+          <div class="amt mt-2"><span class="amt-cur">TZS </span>{{ stats.total_amount_month|floatformat:0|intcomma }}</div>
+        </div>
+        <div style="padding:22px 24px;border-right:1px solid var(--border);text-align:center" class="d-none d-md-block">
+          <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700">Total Approved (Month)</div>
+          <div class="amt mt-2" style="color:var(--success)"><span class="amt-cur" style="color:var(--muted)">TZS </span>{{ stats.total_approved_month|floatformat:0|intcomma }}</div>
+        </div>
+      </div>
+      <div class="col-12 col-md-4">
+        <div style="padding:22px 24px;border-top:1px solid var(--border)" class="d-md-none">
+          <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700">Total Approved (Month)</div>
+          <div class="amt mt-2" style="color:var(--success)"><span class="amt-cur" style="color:var(--muted)">TZS </span>{{ stats.total_approved_month|floatformat:0|intcomma }}</div>
+        </div>
+        <div style="padding:22px 24px;text-align:center" class="d-none d-md-block">
+          <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700">Total Paid (Month)</div>
+          <div class="amt mt-2" style="color:#1D4ED8"><span class="amt-cur" style="color:var(--muted)">TZS </span>{{ stats.total_paid_month|floatformat:0|intcomma }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile: approved + paid rows -->
+    <div class="row g-0 d-md-none">
+      <div class="col-12" style="border-top:1px solid var(--border);padding:22px 24px">
+        <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700">Total Paid (Month)</div>
+        <div class="amt mt-2" style="color:#1D4ED8"><span class="amt-cur" style="color:var(--muted)">TZS </span>{{ stats.total_paid_month|floatformat:0|intcomma }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main Grid ── -->
+<div class="row g-4">
+
+  <!-- Recent Requests -->
+  <div class="col-12 col-lg-7 fade-up" style="animation-delay:0.22s">
+    <div class="card h-100">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-clock-history"></i> Recent Requests</span>
+        <a href="{% url 'payments:list' %}" style="font-size:12px;color:var(--p);text-decoration:none;font-weight:600">
+          View all <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+
+      {% if recent_requests %}
+      <!-- Desktop table -->
+      <div class="d-none d-md-block">
+        <div class="tbl-wrap">
+          <table class="table tbl mb-0">
+            <thead>
+              <tr>
+                <th>Reference</th>
+                <th>Title</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for req in recent_requests %}
+              <tr style="cursor:pointer" onclick="window.location='{% url 'payments:detail' req.pk %}'">
+                <td>
+                  <span class="mono" style="font-size:11.5px;background:var(--surf);padding:3px 8px;border-radius:6px;color:var(--muted)">
+                    {{ req.request_number }}
+                  </span>
+                </td>
+                <td>
+                  <div style="font-weight:600;font-size:13px">{{ req.title|truncatechars:32 }}</div>
+                  <div style="font-size:11px;color:var(--muted)">{{ req.department }}</div>
+                </td>
+                <td>
+                  <div style="font-weight:700;font-size:13px;font-family:var(--font-display)">{{ req.amount_requested|floatformat:0|intcomma }}</div>
+                  <div style="font-size:10px;color:var(--muted)">TZS</div>
+                </td>
+                <td>
+                  <span class="badge-s {% if req.status == 'DRAFT' %}bs-draft{% elif 'APPROVED' in req.status %}bs-approved{% elif 'REJECTED' in req.status %}bs-rejected{% elif req.status == 'PAID' %}bs-paid{% elif 'SUBMITTED' in req.status or 'REVIEW' in req.status %}bs-submitted{% else %}bs-pending{% endif %}">
+                    {{ req.get_status_display }}
+                  </span>
+                </td>
+                <td style="color:var(--muted);font-size:12px">{{ req.created_at|date:"d M Y" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Mobile cards -->
+      <div class="d-md-none">
+        {% for req in recent_requests %}
+        <a href="{% url 'payments:detail' req.pk %}" style="display:block;padding:14px 16px;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;transition:background 0.12s">
+          <div class="d-flex align-items-start justify-content-between gap-2">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;font-size:13.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ req.title }}</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">
+                <span class="mono">{{ req.request_number }}</span> · {{ req.created_at|date:"d M" }}
+              </div>
+            </div>
+            <div class="text-end flex-shrink-0">
+              <div style="font-weight:700;font-size:13.5px;color:var(--p)">{{ req.amount_requested|floatformat:0|intcomma }}</div>
+              <span class="badge-s mt-1 {% if req.status == 'DRAFT' %}bs-draft{% elif 'APPROVED' in req.status %}bs-approved{% elif 'REJECTED' in req.status %}bs-rejected{% elif req.status == 'PAID' %}bs-paid{% else %}bs-submitted{% endif %}" style="font-size:9.5px">
+                {{ req.get_status_display }}
+              </span>
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+
+      {% else %}
+      <div class="card-body text-center py-5">
+        <div style="width:56px;height:56px;background:var(--surf);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
+          <i class="bi bi-inbox" style="font-size:24px;color:var(--border)"></i>
+        </div>
+        <p style="color:var(--muted);font-size:13px">No requests found</p>
+        {% if user.is_requester %}<a href="{% url 'payments:create' %}" class="btn-w mt-2">Create First Request</a>{% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Right Column -->
+  <div class="col-12 col-lg-5 fade-up" style="animation-delay:0.26s">
+
+    <!-- Action Queue -->
+    {% if action_queue %}
+    <div class="card mb-4" style="border-color:#F59E0B;border-width:1.5px">
+      <div class="card-header" style="background:#FFFBEB;border-color:#FDE68A">
+        <i class="bi bi-exclamation-triangle-fill" style="color:#D97706"></i>
+        <span style="color:#92400E">Requires Your Action</span>
+        <span class="ms-auto" style="background:#F59E0B;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">{{ action_queue|length }}</span>
+      </div>
+      <div class="card-body p-0">
+        {% for req in action_queue %}
+        <a href="{% url 'payments:detail' req.pk %}" style="display:block;padding:13px 16px;text-decoration:none;border-bottom:1px solid var(--border);transition:background 0.12s">
+          <div class="d-flex justify-content-between align-items-start gap-2">
+            <div style="flex:1;min-width:0">
+              <div class="mono" style="font-size:10.5px;color:var(--muted)">{{ req.request_number }}</div>
+              <div style="font-weight:600;font-size:13px;color:var(--text);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ req.title|truncatechars:38 }}</div>
+            </div>
+            <div style="font-weight:700;font-size:12.5px;color:var(--p);flex-shrink:0;font-family:var(--font-display)">
+              {{ req.amount_requested|floatformat:0|intcomma }}<span style="font-size:10px;font-weight:400;color:var(--muted);font-family:var(--font-body)"> TZS</span>
+            </div>
+          </div>
+          <div style="margin-top:5px;display:flex;align-items:center;gap:6px">
+            {% if req.priority == 'URGENT' %}
+            <span style="font-size:9.5px;background:#FFF1F2;color:#BE123C;padding:1px 7px;border-radius:4px;font-weight:700;letter-spacing:0.5px">URGENT</span>
+            {% endif %}
+            <span style="font-size:11px;color:var(--muted)">{{ req.submitted_at|timesince }} ago</span>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Activity -->
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-activity"></i> Recent Activity
+      </div>
+      <div class="card-body">
+        {% if recent_actions %}
+        <div class="tl">
+          {% for action in recent_actions %}
+          <div class="tl-item">
+            <div class="tl-dot {% if 'APPROVED' in action.action %}success{% elif 'REJECTED' in action.action or 'RETURNED' in action.action %}danger{% elif 'PAYMENT' in action.action %}primary{% elif 'SUBMITTED' in action.action %}info{% else %}warning{% endif %}"></div>
+            <div class="tl-title">{{ action.get_action_display }}</div>
+            <div class="tl-meta">{{ action.request.request_number }} · {{ action.actor.full_name }}</div>
+            <div class="tl-meta">{{ action.timestamp|timesince }} ago</div>
+            {% if action.remarks %}
+            <div class="tl-body">{{ action.remarks|truncatechars:70 }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+          <i class="bi bi-activity" style="font-size:28px;color:var(--border)"></i>
+          <p style="font-size:13px;color:var(--muted);margin-top:10px">No recent activity</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

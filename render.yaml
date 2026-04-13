@@ -1,0 +1,68 @@
+services:
+  - type: web
+    name: jamiitek
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn ebenezeri.wsgi:application --workers 2 --threads 2 --timeout 120 --log-file -"
+    plan: free
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: ebenezeri.settings
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: jamiitek.com,www.jamiitek.com,jamiitek.onrender.com
+      - key: PYTHON_VERSION
+        value: "3.12.0"
+
+      # ── Database (Supabase) ──
+      - key: DB_NAME
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "5432"
+
+      # ── Email ──
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+
+      # ── Cloudinary ──
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+      # ── Uploadcare ──
+      - key: UPLOADCARE_PUB_KEY
+        sync: false
+      - key: UPLOADCARE_SECRET
+        sync: false
+
+      # ── WhatsApp / Chatbot ──
+      - key: GROQ_API_KEY
+        sync: false
+      - key: WHATSAPP_MASTER_TOKEN
+        sync: false
+      - key: WHATSAPP_WEBHOOK_VERIFY_TOKEN
+        sync: false
+      - key: WILLIAM_WHATSAPP
+        sync: false
+      - key: WILLIAM_PHONE_NUMBER_ID
+        sync: false
+
+      # ── Other ──
+      - key: SITE_URL
+        value: https://jamiitek.com
+      - key: PORTAL_BASE_URL
+        value: https://jamiitek.com/portal/

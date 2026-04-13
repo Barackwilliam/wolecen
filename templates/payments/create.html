@@ -1,0 +1,209 @@
+{% extends "base/base.html" %}
+{% block title %}{% if edit %}Edit Request{% else %}New Payment Request{% endif %} — Wolecen EGL{% endblock %}
+{% block page_title %}{% if edit %}Edit Request{% else %}New Request{% endif %}{% endblock %}
+
+{% block content %}
+
+<div class="bc fade-up">
+  <a href="{% url 'dashboard:home' %}">Dashboard</a>
+  <span class="sep"><i class="bi bi-chevron-right" style="font-size:10px"></i></span>
+  <a href="{% url 'payments:list' %}">Requests</a>
+  <span class="sep"><i class="bi bi-chevron-right" style="font-size:10px"></i></span>
+  <span class="cur">{% if edit %}Edit {{ payment.request_number }}{% else %}New Request{% endif %}</span>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-9">
+
+    <div class="page-hd fade-up" style="animation-delay:0.06s">
+      <div>
+        <h4>{% if edit %}Edit Payment Request{% else %}Create Payment Request{% endif %}</h4>
+        <p>Fields marked <span style="color:var(--danger)">*</span> are required.</p>
+      </div>
+    </div>
+
+    {% if form.errors %}
+    <div class="alert-w aw-danger mb-4 fade-up" style="animation-delay:0.08s">
+      <i class="bi bi-exclamation-circle-fill"></i>
+      <div>
+        <strong style="display:block;margin-bottom:3px">Please fix the errors below:</strong>
+        {% for field, errors in form.errors.items %}
+          {% for error in errors %}
+          <div style="font-size:12.5px;margin-top:1px">— {{ field }}: {{ error }}</div>
+          {% endfor %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" id="paymentForm">
+      {% csrf_token %}
+      {{ form.department }}
+
+      <!-- Section 1 -->
+      <div class="card mb-4 fade-up" style="animation-delay:0.10s">
+        <div class="card-header">
+          <span style="width:24px;height:24px;background:var(--p);color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">1</span>
+          Request Information
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Request Title <span style="color:var(--danger)">*</span></label>
+              {{ form.title }}
+              {% if form.title.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px"><i class="bi bi-exclamation-circle me-1"></i>{{ form.title.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label">Category</label>
+              {{ form.category }}
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label">Priority</label>
+              {{ form.priority }}
+            </div>
+            <div class="col-12">
+              <label class="form-label">Description <span style="color:var(--danger)">*</span></label>
+              {{ form.description }}
+              {% if form.description.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px">{{ form.description.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-12">
+              <label class="form-label">Purpose / Justification <span style="color:var(--danger)">*</span></label>
+              {{ form.purpose }}
+              {% if form.purpose.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px">{{ form.purpose.errors.0 }}</div>{% endif %}
+              <div style="font-size:11.5px;color:var(--muted);margin-top:5px"><i class="bi bi-info-circle me-1"></i>Clearly explain why this payment is necessary</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2 -->
+      <div class="card mb-4 fade-up" style="animation-delay:0.14s">
+        <div class="card-header">
+          <span style="width:24px;height:24px;background:var(--p);color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">2</span>
+          Financial Details
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label class="form-label">Amount Requested (TZS) <span style="color:var(--danger)">*</span></label>
+              <div style="position:relative">
+                <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--muted);font-weight:700;pointer-events:none;z-index:1">TZS</span>
+                <div style="padding-left:44px">{{ form.amount_requested }}</div>
+              </div>
+              {% if form.amount_requested.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px">{{ form.amount_requested.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label">Payment Method <span style="color:var(--danger)">*</span></label>
+              {{ form.payment_method }}
+              {% if form.payment_method.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px">{{ form.payment_method.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label">Date Needed By</label>
+              {{ form.needed_by_date }}
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label">Advance Payment?</label>
+              <div style="display:flex;align-items:center;gap:10px;margin-top:8px;padding:10px 14px;background:var(--surf);border-radius:var(--radius-sm);border:1.5px solid var(--border)">
+                {{ form.is_advance_payment }}
+                <span style="font-size:12.5px;color:var(--muted)">Yes — retirement required after payment</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3 -->
+      <div class="card mb-4 fade-up" style="animation-delay:0.18s">
+        <div class="card-header">
+          <span style="width:24px;height:24px;background:var(--p);color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">3</span>
+          Beneficiary / Payee Details
+          <span style="margin-left:6px;font-size:11px;font-weight:400;color:var(--muted)">(optional)</span>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label class="form-label">Beneficiary Name</label>
+              {{ form.beneficiary_name }}
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label">Bank Name</label>
+              {{ form.beneficiary_bank }}
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label">Account Number</label>
+              {{ form.beneficiary_account }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 4: Documents -->
+      <div class="card mb-4 fade-up" style="animation-delay:0.22s">
+        <div class="card-header">
+          <span style="width:24px;height:24px;background:var(--p);color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">4</span>
+          Supporting Documents
+          <span style="margin-left:6px;font-size:11px;font-weight:400;color:var(--muted)">(optional)</span>
+        </div>
+        <div class="card-body">
+          <label style="display:block;border:2px dashed var(--border);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--surf)" id="dropZone">
+            <i class="bi bi-cloud-arrow-up" style="font-size:32px;color:var(--border);display:block;margin-bottom:8px"></i>
+            <div style="font-size:13.5px;font-weight:600;color:var(--muted)">Click to upload or drag & drop</div>
+            <div style="font-size:11.5px;color:var(--border);margin-top:4px">PDF, Word, Excel, Images — max 10MB each</div>
+            <input type="file" name="documents" id="fileInput" multiple
+                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+                   style="display:none" onchange="showFiles(this)">
+          </label>
+          <div id="fileList" style="margin-top:10px;display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="fade-up d-flex gap-2 justify-content-end flex-wrap" style="animation-delay:0.26s">
+        <a href="{% url 'payments:list' %}" class="btn-w-out">Cancel</a>
+        <button type="submit" name="action" value="draft" class="btn-w-out">
+          <i class="bi bi-floppy"></i> Save Draft
+        </button>
+        <button type="submit" name="action" value="submit" class="btn-w"
+          onclick="return confirm('Submit this request for approval now?')">
+          <i class="bi bi-send-fill"></i> Save & Submit
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showFiles(input) {
+  const list = document.getElementById('fileList');
+  list.innerHTML = '';
+  Array.from(input.files).forEach(f => {
+    const ext = f.name.split('.').pop().toLowerCase();
+    const icon = ['pdf'].includes(ext) ? 'bi-file-earmark-pdf text-danger' :
+                 ['jpg','jpeg','png'].includes(ext) ? 'bi-file-earmark-image text-info' :
+                 ['doc','docx'].includes(ext) ? 'bi-file-earmark-word text-primary' :
+                 ['xls','xlsx'].includes(ext) ? 'bi-file-earmark-excel text-success' : 'bi-file-earmark';
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 12px;background:#fff;border-radius:8px;border:1px solid var(--border);font-size:12.5px';
+    div.innerHTML = `<i class="bi ${icon}" style="font-size:17px;flex-shrink:0"></i>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</span>
+      <span style="color:var(--muted);flex-shrink:0">${(f.size/1024).toFixed(0)} KB</span>`;
+    list.appendChild(div);
+  });
+}
+
+// Drag-and-drop highlight
+const zone = document.getElementById('dropZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--p)'; zone.style.background = '#EFF6FF'; });
+zone.addEventListener('dragleave', () => { zone.style.borderColor = 'var(--border)'; zone.style.background = 'var(--surf)'; });
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.style.borderColor = 'var(--border)'; zone.style.background = 'var(--surf)';
+  const fi = document.getElementById('fileInput');
+  fi.files = e.dataTransfer.files;
+  showFiles(fi);
+});
+</script>
+{% endblock %}

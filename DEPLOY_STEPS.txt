@@ -1,0 +1,71 @@
+╔══════════════════════════════════════════╗
+║   JAMIITEK — RENDER DEPLOYMENT GUIDE    ║
+╚══════════════════════════════════════════╝
+
+📁 FILES ZA KUWEKA KWENYE ROOT YA PROJECT:
+   render.yaml  → root (pamoja na manage.py)
+   build.sh     → root (pamoja na manage.py)
+
+═══════════════════════════════════════════
+STEP 1 — WEKA FILES KWENYE GITHUB
+═══════════════════════════════════════════
+git add render.yaml build.sh
+git commit -m "Add Render deployment config"
+git push
+
+═══════════════════════════════════════════
+STEP 2 — RENDER DASHBOARD
+═══════════════════════════════════════════
+1. Nenda https://render.com → Sign in
+2. Click "New +" → "Web Service"
+3. Connect GitHub repo yako ya JamiiTek
+4. Render itaona render.yaml automatically
+
+═══════════════════════════════════════════
+STEP 3 — ENVIRONMENT VARIABLES
+═══════════════════════════════════════════
+Kwenye Render dashboard → Environment, weka:
+
+  DB_NAME       = postgres
+  DB_USER       = postgres.frapnewfadymevdkznrq
+  DB_PASSWORD   = [neno lako la siri]
+  DB_HOST       = aws-1-eu-north-1.pooler.supabase.com
+  DB_PORT       = 5432
+
+  EMAIL_HOST_USER     = info@jamiitek.com
+  EMAIL_HOST_PASSWORD = [app password yako]
+
+  CLOUDINARY_CLOUD_NAME = drc3xiipg
+  CLOUDINARY_API_KEY    = [key yako]
+  CLOUDINARY_API_SECRET = [secret yako]
+
+  UPLOADCARE_PUB_KEY = 4c3ba9de492e0e0eaddc
+  UPLOADCARE_SECRET  = [secret yako]
+
+  GROQ_API_KEY               = [key yako]
+  WHATSAPP_MASTER_TOKEN      = [token yako]
+  WHATSAPP_WEBHOOK_VERIFY_TOKEN = jamiitek_wh_2025
+
+═══════════════════════════════════════════
+STEP 4 — DEPLOY
+═══════════════════════════════════════════
+Click "Deploy" — Render itafanya:
+  ✓ pip install -r requirements.txt
+  ✓ python manage.py migrate
+  ✓ python manage.py collectstatic
+  ✓ Kuanza gunicorn server
+
+═══════════════════════════════════════════
+STEP 5 — CUSTOM DOMAIN (jamiitek.com)
+═══════════════════════════════════════════
+1. Render Dashboard → Settings → Custom Domains
+2. Ongeza: jamiitek.com na www.jamiitek.com
+3. Render itakupa IP au CNAME record
+4. Nenda DNS provider yako (Cloudflare/Namecheap)
+5. Ongeza record ile → Wait propagation (1-24hr)
+
+⚠️ IMPORTANT NOTES:
+• Free plan ya Render inaweza kulala baada ya dakika 15
+  za kutokuwa na traffic — inaweza kuchukua sekunde 30-60
+  ku-wake up mara ya kwanza.
+• Upgrade kuwa $7/mo Starter plan ukitaka iwe online 24/7.

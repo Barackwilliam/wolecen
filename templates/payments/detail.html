@@ -1,0 +1,338 @@
+{% extends "base/base.html" %}
+{% load humanize %}
+
+{% block title %}{{ payment_request.request_number }} — Wolecen EGL{% endblock %}
+{% block page_title %}Request Detail{% endblock %}
+
+{% block extra_css %}
+<style>
+  .detail-row { display:flex; justify-content:space-between; align-items:flex-start; padding:10px 0; border-bottom:1px solid var(--border); gap:16px; }
+  .detail-row:last-child { border-bottom:none; }
+  .detail-lbl { font-size:11.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; flex-shrink:0; width:130px; }
+  .detail-val { font-size:13.5px; font-weight:500; color:var(--text); text-align:right; }
+  @media (max-width:480px) { .detail-lbl { width:auto; } .detail-row { flex-direction:column; gap:3px; } .detail-val { text-align:left; } }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="bc fade-up">
+  <a href="{% url 'dashboard:home' %}">Dashboard</a>
+  <span class="sep"><i class="bi bi-chevron-right" style="font-size:10px"></i></span>
+  <a href="{% url 'payments:list' %}">Requests</a>
+  <span class="sep"><i class="bi bi-chevron-right" style="font-size:10px"></i></span>
+  <span class="cur">{{ payment_request.request_number }}</span>
+</div>
+
+<!-- ── Header ── -->
+<div class="page-hd fade-up">
+  <div style="flex:1;min-width:0">
+    <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+      <span class="mono" style="font-size:12px;background:var(--surf);padding:3px 10px;border-radius:6px;color:var(--muted)">{{ payment_request.request_number }}</span>
+      <span class="badge-s {% if payment_request.status == 'DRAFT' %}bs-draft{% elif 'APPROVED' in payment_request.status %}bs-approved{% elif 'REJECTED' in payment_request.status %}bs-rejected{% elif payment_request.status == 'PAID' %}bs-paid{% elif 'SUBMITTED' in payment_request.status %}bs-submitted{% elif 'RETIREMENT' in payment_request.status %}bs-pending{% elif payment_request.status == 'CLOSED' %}bs-closed{% else %}bs-draft{% endif %}">
+        {{ payment_request.get_status_display }}
+      </span>
+      {% if payment_request.priority == 'URGENT' %}
+      <span style="background:#FFF1F2;color:#BE123C;font-size:10.5px;padding:3px 9px;border-radius:5px;font-weight:700;letter-spacing:0.5px">🚨 URGENT</span>
+      {% endif %}
+    </div>
+    <h4 style="font-size:clamp(16px,3vw,22px);margin-bottom:6px">{{ payment_request.title }}</h4>
+    <p>Submitted by <strong>{{ payment_request.requester.full_name }}</strong> · {{ payment_request.department }} · {{ payment_request.created_at|date:"d F Y, H:i" }}</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap flex-shrink-0">
+    {% if payment_request.requester == user and payment_request.status == 'DRAFT' %}
+    <a href="{% url 'payments:edit' payment_request.pk %}" class="btn-w-out"><i class="bi bi-pencil"></i> Edit</a>
+    {% endif %}
+    <a href="{% url 'payments:print' payment_request.pk %}" class="btn-w-out" target="_blank"><i class="bi bi-printer"></i></a>
+    <a href="{% url 'payments:export_pdf' payment_request.pk %}" class="btn-w-out"><i class="bi bi-file-pdf"></i></a>
+  </div>
+</div>
+
+<!-- ── Progress ── -->
+<div class="mb-4 fade-up" style="animation-delay:0.06s">
+  <div class="d-flex justify-content-between mb-1">
+    <span style="font-size:12px;color:var(--muted);font-weight:500">Process Progress</span>
+    <span style="font-size:12px;font-weight:700;color:var(--p)">{{ payment_request.progress_percent }}%</span>
+  </div>
+  <div class="prog">
+    <div class="bar" style="width:{{ payment_request.progress_percent }}%"></div>
+  </div>
+</div>
+
+<!-- ── Workflow Steps ── -->
+<div class="card mb-4 fade-up" style="animation-delay:0.10s">
+  <div class="card-body py-2">
+    <div class="wf-steps">
+      {% with s=payment_request.status %}
+      <div class="wf-step done">
+        <div class="wf-circle"><i class="bi bi-check-lg" style="font-size:13px"></i></div>
+        <div class="wf-label">Created</div>
+      </div>
+      <div class="wf-step {% if s != 'DRAFT' %}done{% elif s == 'DRAFT' %}active{% endif %}">
+        <div class="wf-circle">{% if s != 'DRAFT' %}<i class="bi bi-check-lg" style="font-size:13px"></i>{% else %}2{% endif %}</div>
+        <div class="wf-label">Submitted</div>
+      </div>
+      <div class="wf-step {% if s in 'APPROVED_L1,APPROVED_L2,PROCESSING,PAID,RETIREMENT_PENDING,RETIREMENT_SUBMITTED,RETIREMENT_APPROVED,CLOSED' %}done{% elif s == 'SUBMITTED' or s == 'UNDER_REVIEW1' %}active{% elif s == 'REJECTED_L1' %}rejected{% endif %}">
+        <div class="wf-circle">
+          {% if s in 'APPROVED_L1,APPROVED_L2,PROCESSING,PAID,RETIREMENT_PENDING,RETIREMENT_SUBMITTED,RETIREMENT_APPROVED,CLOSED' %}<i class="bi bi-check-lg" style="font-size:13px"></i>
+          {% elif s == 'REJECTED_L1' %}<i class="bi bi-x-lg" style="font-size:11px"></i>{% else %}3{% endif %}
+        </div>
+        <div class="wf-label">Reviewer 1</div>
+      </div>
+      <div class="wf-step {% if s in 'APPROVED_L2,PROCESSING,PAID,RETIREMENT_PENDING,RETIREMENT_SUBMITTED,RETIREMENT_APPROVED,CLOSED' %}done{% elif s == 'APPROVED_L1' or s == 'UNDER_REVIEW2' %}active{% elif s == 'REJECTED_L2' %}rejected{% endif %}">
+        <div class="wf-circle">
+          {% if s in 'APPROVED_L2,PROCESSING,PAID,RETIREMENT_PENDING,RETIREMENT_SUBMITTED,RETIREMENT_APPROVED,CLOSED' %}<i class="bi bi-check-lg" style="font-size:13px"></i>
+          {% elif s == 'REJECTED_L2' %}<i class="bi bi-x-lg" style="font-size:11px"></i>{% else %}4{% endif %}
+        </div>
+        <div class="wf-label">Reviewer 2</div>
+      </div>
+      <div class="wf-step {% if s in 'PAID,RETIREMENT_PENDING,RETIREMENT_SUBMITTED,RETIREMENT_APPROVED,CLOSED' %}done{% elif s in 'APPROVED_L2,PROCESSING' %}active{% endif %}">
+        <div class="wf-circle">{% if s in 'PAID,RETIREMENT_PENDING,RETIREMENT_SUBMITTED,RETIREMENT_APPROVED,CLOSED' %}<i class="bi bi-check-lg" style="font-size:13px"></i>{% else %}5{% endif %}</div>
+        <div class="wf-label">Finance</div>
+      </div>
+      <div class="wf-step {% if s in 'RETIREMENT_PENDING,RETIREMENT_SUBMITTED,RETIREMENT_APPROVED,CLOSED' or s == 'PAID' %}done{% endif %}">
+        <div class="wf-circle">{% if s in 'PAID,RETIREMENT_PENDING,RETIREMENT_SUBMITTED,RETIREMENT_APPROVED,CLOSED' %}<i class="bi bi-check-lg" style="font-size:13px"></i>{% else %}6{% endif %}</div>
+        <div class="wf-label">Paid</div>
+      </div>
+      <div class="wf-step {% if s in 'RETIREMENT_APPROVED,CLOSED' %}done{% elif s in 'RETIREMENT_SUBMITTED,RETIREMENT_REJECTED,RETIREMENT_PENDING' %}active{% endif %}">
+        <div class="wf-circle">{% if s in 'RETIREMENT_APPROVED,CLOSED' %}<i class="bi bi-check-lg" style="font-size:13px"></i>{% else %}7{% endif %}</div>
+        <div class="wf-label">Retirement</div>
+      </div>
+      <div class="wf-step {% if s == 'CLOSED' %}done{% endif %}">
+        <div class="wf-circle">{% if s == 'CLOSED' %}<i class="bi bi-check-lg" style="font-size:13px"></i>{% else %}8{% endif %}</div>
+        <div class="wf-label">Closed</div>
+      </div>
+      {% endwith %}
+    </div>
+  </div>
+</div>
+
+<!-- ── Main Grid ── -->
+<div class="row g-4">
+
+  <!-- Left: Details -->
+  <div class="col-12 col-lg-7">
+
+    <!-- Request Details -->
+    <div class="card mb-4 fade-up" style="animation-delay:0.14s">
+      <div class="card-header"><i class="bi bi-file-text"></i> Request Details</div>
+      <div class="card-body">
+        <div class="detail-row">
+          <div class="detail-lbl">Title</div>
+          <div class="detail-val" style="text-align:right">{{ payment_request.title }}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-lbl">Department</div>
+          <div class="detail-val">{{ payment_request.department }}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-lbl">Category</div>
+          <div class="detail-val">{{ payment_request.category|default:"—" }}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-lbl">Payment Method</div>
+          <div class="detail-val">{{ payment_request.payment_method }}</div>
+        </div>
+        {% if payment_request.needed_by_date %}
+        <div class="detail-row">
+          <div class="detail-lbl">Needed By</div>
+          <div class="detail-val">{{ payment_request.needed_by_date|date:"d F Y" }}</div>
+        </div>
+        {% endif %}
+        <div class="detail-row">
+          <div class="detail-lbl">Advance Payment</div>
+          <div class="detail-val">{% if payment_request.is_advance_payment %}<span style="color:var(--warn);font-weight:600">Yes — Retirement required</span>{% else %}No{% endif %}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Purpose -->
+    <div class="card mb-4 fade-up" style="animation-delay:0.16s">
+      <div class="card-header"><i class="bi bi-chat-quote"></i> Purpose & Justification</div>
+      <div class="card-body">
+        <p style="font-size:13.5px;line-height:1.7;color:var(--text);white-space:pre-wrap">{{ payment_request.purpose }}</p>
+        {% if payment_request.description %}
+        <hr style="border-color:var(--border);margin:16px 0">
+        <div style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:8px">Description</div>
+        <p style="font-size:13.5px;line-height:1.7;color:var(--text);white-space:pre-wrap">{{ payment_request.description }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if payment_request.beneficiary_name %}
+    <!-- Beneficiary -->
+    <div class="card mb-4 fade-up" style="animation-delay:0.18s">
+      <div class="card-header"><i class="bi bi-person-badge"></i> Beneficiary / Payee</div>
+      <div class="card-body">
+        <div class="detail-row">
+          <div class="detail-lbl">Name</div>
+          <div class="detail-val">{{ payment_request.beneficiary_name }}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-lbl">Bank</div>
+          <div class="detail-val">{{ payment_request.beneficiary_bank|default:"—" }}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-lbl">Account No.</div>
+          <div class="detail-val mono">{{ payment_request.beneficiary_account|default:"—" }}</div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Documents -->
+    <div class="card fade-up" style="animation-delay:0.20s">
+      <div class="card-header">
+        <i class="bi bi-paperclip"></i> Documents
+        <span class="ms-auto" style="font-size:11px;color:var(--muted)">{{ payment_request.documents.count }} file{{ payment_request.documents.count|pluralize }}</span>
+      </div>
+      {% for doc in payment_request.documents.all %}
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border)">
+        {% with ext=doc.file.name %}
+        <div style="width:38px;height:38px;border-radius:8px;background:{% if '.pdf' in ext %}#FFF1F2{% elif '.jpg' in ext or '.png' in ext %}#EFF6FF{% else %}#F0FFF4{% endif %};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="bi bi-file-earmark-{% if '.pdf' in ext %}pdf{% elif '.jpg' in ext or '.png' in ext %}image{% else %}text{% endif %}" style="font-size:18px;color:{% if '.pdf' in ext %}var(--danger){% elif '.jpg' in ext or '.png' in ext %}#3B82F6{% else %}var(--success){% endif %}"></i>
+        </div>
+        {% endwith %}
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ doc.title }}</div>
+          <div style="font-size:11px;color:var(--muted)">{{ doc.get_doc_type_display }} · {{ doc.uploaded_at|date:"d M Y" }}</div>
+        </div>
+        <a href="{{ doc.file.url }}" target="_blank" class="btn-icon"><i class="bi bi-download"></i></a>
+      </div>
+      {% empty %}
+      <div class="card-body text-center" style="color:var(--muted);font-size:13px;padding:20px">
+        <i class="bi bi-folder" style="font-size:22px;display:block;margin-bottom:6px;color:var(--border)"></i>No documents attached
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+
+  <!-- Right: Amounts + Actions + Chain -->
+  <div class="col-12 col-lg-5">
+
+    <!-- Amount Card -->
+    <div class="card mb-4 fade-up" style="animation-delay:0.14s;border-color:var(--p);border-width:1.5px">
+      <div class="card-body">
+        <div style="text-align:center;padding:12px 0 16px">
+          <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:700">Amount Requested</div>
+          <div class="amt mt-2"><span class="amt-cur">TZS </span>{{ payment_request.amount_requested|floatformat:0|intcomma }}</div>
+        </div>
+        {% if payment_request.amount_approved %}
+        <div style="border-top:1px solid var(--border);padding:10px 0 4px">
+          <div class="detail-row" style="padding:6px 0">
+            <div class="detail-lbl">Approved</div>
+            <div class="detail-val" style="color:var(--success);font-weight:700">TZS {{ payment_request.amount_approved|floatformat:0|intcomma }}</div>
+          </div>
+        </div>
+        {% endif %}
+        {% if payment_request.amount_actual %}
+        <div class="detail-row" style="padding:6px 0">
+          <div class="detail-lbl">Actual Spent</div>
+          <div class="detail-val" style="font-weight:700">TZS {{ payment_request.amount_actual|floatformat:0|intcomma }}</div>
+        </div>
+        {% if payment_request.amount_variance %}
+        <div class="detail-row" style="padding:6px 0">
+          <div class="detail-lbl">Variance</div>
+          <div class="detail-val" style="font-weight:700;color:{% if payment_request.amount_variance > 0 %}var(--danger){% else %}var(--success){% endif %}">
+            {% if payment_request.amount_variance > 0 %}▲ Overspent{% else %}▼ Savings{% endif %}
+            TZS {{ payment_request.amount_variance|floatformat:0|intcomma }}
+          </div>
+        </div>
+        {% endif %}
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Action Panel -->
+    {% include "payments/partials/action_panel.html" %}
+
+    <!-- Approval Chain -->
+    <div class="card mb-4 fade-up" style="animation-delay:0.22s">
+      <div class="card-header"><i class="bi bi-people"></i> Approval Chain</div>
+      <div class="card-body p-0">
+        <!-- Requester -->
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border)">
+          <div class="u-avatar" style="width:32px;height:32px;font-size:11px">{{ payment_request.requester.initials }}</div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600">{{ payment_request.requester.full_name }}</div>
+            <div style="font-size:11px;color:var(--muted)">Requester</div>
+          </div>
+          <i class="bi bi-check-circle-fill" style="color:var(--success);font-size:16px"></i>
+        </div>
+        {% for label, person, done, icon in approval_chain %}
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);{% if not done %}opacity:0.5{% endif %}">
+          <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;{% if done %}background:linear-gradient(135deg,var(--gold),#e09600);color:var(--p){% else %}background:var(--border);color:var(--muted){% endif %}">
+            {% if person %}{{ person.initials }}{% else %}?{% endif %}
+          </div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600">{% if person %}{{ person.full_name }}{% else %}—{% endif %}</div>
+            <div style="font-size:11px;color:var(--muted)">{{ label }}</div>
+          </div>
+          {% if done %}<i class="bi bi-{{ icon }}" style="color:{% if 'x' in icon %}var(--danger){% else %}var(--success){% endif %};font-size:16px"></i>
+          {% else %}<i class="bi bi-clock" style="color:var(--border);font-size:14px"></i>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Activity & Comments ── -->
+<div class="card mt-2 fade-up" style="animation-delay:0.26s">
+  <div class="card-header"><i class="bi bi-chat-text"></i> Activity & Comments</div>
+  <div class="card-body">
+    <div class="row g-4">
+      <div class="col-12 col-md-7">
+        <div class="tl">
+          {% for action in payment_request.approval_actions.all %}
+          <div class="tl-item">
+            <div class="tl-dot {% if 'APPROVED' in action.action %}success{% elif 'REJECTED' in action.action or 'RETURNED' in action.action %}danger{% elif 'PAYMENT' in action.action %}primary{% else %}info{% endif %}"></div>
+            <div class="tl-title">{{ action.get_action_display }}</div>
+            <div class="tl-meta">{{ action.actor.full_name }} · {{ action.timestamp|date:"d M Y, H:i" }}</div>
+            {% if action.remarks %}
+            <div class="tl-body">{{ action.remarks }}</div>
+            {% endif %}
+          </div>
+          {% empty %}
+          <p style="color:var(--muted);font-size:13px">No activity recorded yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="col-12 col-md-5">
+        <form method="post" action="{% url 'payments:add_comment' payment_request.pk %}">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label">Add Comment</label>
+            <textarea name="content" class="form-control" rows="3" placeholder="Enter your comment…"></textarea>
+          </div>
+          {% if user.is_finance or user.is_auditor or user.is_system_admin %}
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+            <input class="form-check-input" type="checkbox" name="is_internal" id="internalCheck" style="width:16px;height:16px">
+            <label for="internalCheck" style="font-size:12.5px;color:var(--muted);cursor:pointer">Internal note (hidden from requester)</label>
+          </div>
+          {% endif %}
+          <button type="submit" class="btn-w w-100"><i class="bi bi-chat-square-text"></i> Post Comment</button>
+        </form>
+
+        {% if payment_request.comments.exists %}
+        <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
+          {% for comment in payment_request.comments.all %}
+          <div style="padding:11px 13px;background:var(--surf);border-radius:10px;border-left:3px solid {% if comment.comment_type == 'REJECTION' %}var(--danger){% elif comment.comment_type == 'APPROVAL' %}var(--success){% else %}var(--border){% endif %}">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:5px;display:flex;align-items:center;gap:6px">
+              <strong style="color:var(--text)">{{ comment.author.full_name }}</strong>
+              · {{ comment.created_at|date:"d M, H:i" }}
+              {% if comment.is_internal %}<span style="background:#FFF1F2;color:#BE123C;font-size:9px;padding:1px 6px;border-radius:4px;font-weight:700">INTERNAL</span>{% endif %}
+            </div>
+            <div style="font-size:13.5px;color:var(--text)">{{ comment.content }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

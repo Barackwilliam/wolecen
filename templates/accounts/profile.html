@@ -1,0 +1,81 @@
+{% extends "base/base.html" %}
+{% block title %}My Profile — Wolecen EGL{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-6">
+
+    <!-- Profile card -->
+    <div class="card mb-4 fade-up" style="overflow:visible">
+      <div style="background:linear-gradient(135deg,var(--p) 0%,var(--p2) 100%);padding:32px 24px 20px;border-radius:var(--radius) var(--radius) 0 0;text-align:center;position:relative">
+        <!-- Avatar -->
+        <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#e09600);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--p);margin:0 auto 14px;box-shadow:0 6px 20px rgba(240,165,0,0.4);border:4px solid rgba(255,255,255,0.2)">
+          {{ user.initials }}
+        </div>
+        <h5 style="font-family:var(--font-display);font-size:18px;font-weight:700;color:#fff;margin:0">{{ user.full_name }}</h5>
+        <p style="font-size:12.5px;color:rgba(255,255,255,0.55);margin-top:4px">{{ user.get_role_display }}</p>
+        {% if user.department %}
+        <span style="font-size:11.5px;background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.8);padding:4px 12px;border-radius:20px;display:inline-block;margin-top:4px">{{ user.department }}</span>
+        {% endif %}
+      </div>
+
+      <!-- Edit form -->
+      <div class="card-header"><i class="bi bi-person-gear"></i> Edit Profile</div>
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label class="form-label">First Name</label>
+              {{ form.first_name }}
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label">Last Name</label>
+              {{ form.last_name }}
+            </div>
+            <div class="col-12">
+              <label class="form-label">Phone Number</label>
+              {{ form.phone }}
+            </div>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mt-4 flex-wrap gap-2">
+            <a href="{% url 'accounts:change_password' %}" style="font-size:13px;color:var(--p);text-decoration:none;font-weight:600">
+              <i class="bi bi-key me-1"></i> Change Password
+            </a>
+            <button type="submit" class="btn-w">
+              <i class="bi bi-check-lg"></i> Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Account info -->
+    <div class="card fade-up" style="animation-delay:0.10s">
+      <div class="card-header"><i class="bi bi-info-circle"></i> Account Information</div>
+      <div class="card-body p-0">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)">
+            <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);font-weight:700;margin-bottom:4px">Email</div>
+            <div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis">{{ user.email }}</div>
+          </div>
+          <div style="padding:14px 18px;border-bottom:1px solid var(--border)">
+            <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);font-weight:700;margin-bottom:4px">Employee ID</div>
+            <div class="mono" style="font-size:13px;font-weight:500">{{ user.employee_id|default:"—" }}</div>
+          </div>
+          <div style="padding:14px 18px;border-right:1px solid var(--border)">
+            <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);font-weight:700;margin-bottom:4px">Last Login</div>
+            <div style="font-size:13px;font-weight:500">{{ user.last_login|date:"d M Y, H:i"|default:"—" }}</div>
+          </div>
+          <div style="padding:14px 18px">
+            <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);font-weight:700;margin-bottom:4px">Last IP</div>
+            <div class="mono" style="font-size:13px;font-weight:500">{{ user.last_login_ip|default:"—" }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

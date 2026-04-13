@@ -1,0 +1,309 @@
+{% load humanize %}
+
+{% with s=payment_request.status %}
+
+<!-- REQUESTER: Submit draft -->
+{% if user == payment_request.requester and s == 'DRAFT' %}
+<div class="card mb-4 fade-up" style="border-color:#3B82F6;border-width:1.5px">
+  <div class="card-header" style="background:#EFF6FF;border-color:#BFDBFE">
+    <i class="bi bi-send-fill" style="color:#2563EB"></i>
+    <span style="color:#1E40AF;font-weight:700">Ready to Submit?</span>
+  </div>
+  <div class="card-body">
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Review all details carefully. Once submitted, the request enters the approval workflow.</p>
+    <form method="post" action="{% url 'payments:submit' payment_request.pk %}">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">Remarks (optional)</label>
+        <textarea name="remarks" class="form-control" rows="2" placeholder="Any notes for the reviewer…"></textarea>
+      </div>
+      <button type="submit" class="btn-w w-100" onclick="return confirm('Submit this request for approval?')">
+        <i class="bi bi-send-fill"></i> Submit for Approval
+      </button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- REQUESTER: Resubmit after rejection -->
+{% if user == payment_request.requester and s == 'REJECTED_L1' or user == payment_request.requester and s == 'REJECTED_L2' %}
+<div class="card mb-4 fade-up" style="border-color:var(--danger);border-width:1.5px">
+  <div class="card-header" style="background:#FFF1F2;border-color:#FECDD3">
+    <i class="bi bi-exclamation-circle-fill" style="color:var(--danger)"></i>
+    <span style="color:#881337;font-weight:700">Request Rejected — Resubmit?</span>
+  </div>
+  <div class="card-body">
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Address the rejection reason and resubmit for review.</p>
+    <a href="{% url 'payments:edit' payment_request.pk %}" class="btn-w-out w-100 mb-3">
+      <i class="bi bi-pencil"></i> Edit Request First
+    </a>
+    <form method="post" action="{% url 'payments:submit' payment_request.pk %}">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">Resubmission Remarks <span style="color:var(--danger)">*</span></label>
+        <textarea name="remarks" class="form-control" rows="2" placeholder="Explain what was changed…" required></textarea>
+      </div>
+      <button type="submit" class="btn-w w-100">
+        <i class="bi bi-arrow-clockwise"></i> Resubmit Request
+      </button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- REVIEWER 1 -->
+{% if user.can_approve_level1 and s == 'SUBMITTED' %}
+<div class="card mb-4 fade-up" style="border-color:var(--warn);border-width:1.5px">
+  <div class="card-header" style="background:#FFFBEB;border-color:#FDE68A">
+    <i class="bi bi-clipboard-check-fill" style="color:#D97706"></i>
+    <span style="color:#92400E;font-weight:700">Level 1 Review Required</span>
+  </div>
+  <div class="card-body">
+    <form id="l1Form">
+      <div class="mb-3">
+        <label class="form-label">Approved Amount (TZS)</label>
+        <input type="number" class="form-control" id="l1Amount" value="{{ payment_request.amount_requested }}" step="0.01">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Remarks</label>
+        <textarea class="form-control" id="l1Remarks" rows="2" placeholder="Approval notes…"></textarea>
+      </div>
+    </form>
+    <div class="d-flex gap-2">
+      <form method="post" action="{% url 'approvals:approve_l1' payment_request.pk %}" style="flex:1">
+        {% csrf_token %}
+        <input type="hidden" name="amount_approved" id="l1AmountApprove">
+        <input type="hidden" name="remarks" id="l1RemarksApprove">
+        <button type="submit" class="btn-w success w-100"
+          onclick="document.getElementById('l1AmountApprove').value=document.getElementById('l1Amount').value;document.getElementById('l1RemarksApprove').value=document.getElementById('l1Remarks').value;return confirm('Approve this request?')">
+          <i class="bi bi-check-lg"></i> Approve
+        </button>
+      </form>
+      <form method="post" action="{% url 'approvals:reject_l1' payment_request.pk %}" style="flex:1">
+        {% csrf_token %}
+        <input type="hidden" name="remarks" id="l1RemarksReject">
+        <button type="submit" class="btn-w danger w-100"
+          onclick="var r=document.getElementById('l1Remarks').value;if(!r.trim()){alert('Please enter rejection reason.');return false;}document.getElementById('l1RemarksReject').value=r;return confirm('Reject this request?')">
+          <i class="bi bi-x-lg"></i> Reject
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- REVIEWER 2 -->
+{% if user.can_approve_level2 and s == 'APPROVED_L1' %}
+<div class="card mb-4 fade-up" style="border-color:#8B5CF6;border-width:1.5px">
+  <div class="card-header" style="background:#F5F3FF;border-color:#DDD6FE">
+    <i class="bi bi-shield-check" style="color:#7C3AED"></i>
+    <span style="color:#4C1D95;font-weight:700">Level 2 Finance Review</span>
+  </div>
+  <div class="card-body">
+    <form id="l2Form">
+      <div class="mb-3">
+        <label class="form-label">Final Approved Amount (TZS)</label>
+        <input type="number" class="form-control" id="l2Amount" value="{{ payment_request.amount_approved|default:payment_request.amount_requested }}" step="0.01">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Finance Controller Remarks</label>
+        <textarea class="form-control" id="l2Remarks" rows="2" placeholder="Finance verification notes…"></textarea>
+      </div>
+    </form>
+    <div class="d-flex gap-2">
+      <form method="post" action="{% url 'approvals:approve_l2' payment_request.pk %}" style="flex:1">
+        {% csrf_token %}
+        <input type="hidden" name="amount_approved" id="l2AmountApprove">
+        <input type="hidden" name="remarks" id="l2RemarksApprove">
+        <button type="submit" class="btn-w w-100" style="background:#7C3AED"
+          onclick="document.getElementById('l2AmountApprove').value=document.getElementById('l2Amount').value;document.getElementById('l2RemarksApprove').value=document.getElementById('l2Remarks').value;return confirm('Approve at Finance Level?')">
+          <i class="bi bi-check-lg"></i> Approve & Forward
+        </button>
+      </form>
+      <form method="post" action="{% url 'approvals:reject_l2' payment_request.pk %}" style="flex:1">
+        {% csrf_token %}
+        <input type="hidden" name="remarks" id="l2RemarksReject">
+        <button type="submit" class="btn-w danger w-100"
+          onclick="var r=document.getElementById('l2Remarks').value;if(!r.trim()){alert('Rejection reason required.');return false;}document.getElementById('l2RemarksReject').value=r;return confirm('Reject this request?')">
+          <i class="bi bi-x-lg"></i> Reject
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- FINANCE: Process Payment -->
+{% if user.can_process_payment and s == 'APPROVED_L2' %}
+<div class="card mb-4 fade-up" style="border-color:var(--success);border-width:1.5px">
+  <div class="card-header" style="background:#ECFDF5;border-color:#A7F3D0">
+    <i class="bi bi-cash-stack" style="color:var(--success)"></i>
+    <span style="color:#064E3B;font-weight:700">Process Payment</span>
+  </div>
+  <div class="card-body">
+    <div style="background:var(--surf);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px">
+      Amount to pay: <strong style="color:var(--p);font-family:var(--font-display)">TZS {{ payment_request.amount_approved|default:payment_request.amount_requested|floatformat:0|intcomma }}</strong>
+    </div>
+    <form method="post" action="{% url 'approvals:process_payment' payment_request.pk %}">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">Remarks</label>
+        <textarea name="remarks" class="form-control" rows="2" placeholder="Payment notes…"></textarea>
+      </div>
+      <button type="submit" class="btn-w success w-100" onclick="return confirm('Initiate payment processing?')">
+        <i class="bi bi-arrow-right-circle-fill"></i> Initiate Payment
+      </button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- FINANCE: Confirm Payment Made -->
+{% if user.can_process_payment and s == 'PROCESSING' %}
+<div class="card mb-4 fade-up" style="border-color:var(--success);border-width:1.5px">
+  <div class="card-header" style="background:#ECFDF5;border-color:#A7F3D0">
+    <i class="bi bi-check-circle-fill" style="color:var(--success)"></i>
+    <span style="color:#064E3B;font-weight:700">Confirm Payment Made</span>
+  </div>
+  <div class="card-body">
+    <form method="post" action="{% url 'approvals:confirm_payment' payment_request.pk %}">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">Payment Reference / Notes</label>
+        <textarea name="remarks" class="form-control" rows="2"></textarea>
+      </div>
+      <button type="submit" class="btn-w success w-100" onclick="return confirm('Confirm payment has been made?')">
+        <i class="bi bi-check-circle-fill"></i> Confirm Payment Made
+      </button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- REQUESTER: Submit Retirement -->
+{% if user == payment_request.requester %}
+  {% if s == 'PAID' or s == 'RETIREMENT_REJECTED' %}
+  <div class="card mb-4 fade-up" style="border-color:#F59E0B;border-width:1.5px">
+    <div class="card-header" style="background:#FFFBEB;border-color:#FDE68A">
+      <i class="bi bi-receipt-cutoff" style="color:#D97706"></i>
+      <span style="color:#92400E;font-weight:700">Submit Retirement of Receipt</span>
+    </div>
+    <div class="card-body">
+      {% if s == 'RETIREMENT_REJECTED' %}
+      <div class="alert-w aw-danger mb-3">
+        <i class="bi bi-exclamation-circle-fill"></i>
+        Retirement was returned for correction. Please upload corrected receipts.
+      </div>
+      {% endif %}
+      <form method="post" action="{% url 'payments:submit_retirement' payment_request.pk %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label">Actual Amount Spent (TZS) <span style="color:var(--danger)">*</span></label>
+          <input type="number" name="amount_actual" class="form-control"
+                 value="{{ payment_request.amount_approved|default:payment_request.amount_requested }}"
+                 step="0.01" min="0" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Upload Receipt(s)</label>
+          <input type="file" name="receipts" class="form-control" multiple accept=".pdf,.jpg,.jpeg,.png">
+          <div style="font-size:11.5px;color:var(--muted);margin-top:4px">PDF, JPG, PNG — max 10MB each</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Retirement Remarks</label>
+          <textarea name="remarks" class="form-control" rows="2" placeholder="Spending details…"></textarea>
+        </div>
+        <button type="submit" class="btn-w gold w-100" onclick="return confirm('Submit retirement of receipt?')">
+          <i class="bi bi-upload"></i> Submit Retirement
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+{% endif %}
+
+<!-- AUDITOR/FINANCE: Verify Retirement -->
+{% if user.can_verify_retirement and s == 'RETIREMENT_SUBMITTED' %}
+<div class="card mb-4 fade-up" style="border-color:#3B82F6;border-width:1.5px">
+  <div class="card-header" style="background:#EFF6FF;border-color:#BFDBFE">
+    <i class="bi bi-person-check-fill" style="color:#2563EB"></i>
+    <span style="color:#1E40AF;font-weight:700">Verify Retirement</span>
+  </div>
+  <div class="card-body">
+
+    <!-- Amount comparison -->
+    <div style="background:var(--surf);border-radius:10px;padding:14px;margin-bottom:16px;display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px">
+        <span style="color:var(--muted);font-weight:500">Approved Amount</span>
+        <span style="font-weight:700">TZS {{ payment_request.amount_approved|default:payment_request.amount_requested|floatformat:0|intcomma }}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px">
+        <span style="color:var(--muted);font-weight:500">Actual Spent</span>
+        <span style="font-weight:700;color:var(--p)">TZS {{ payment_request.amount_actual|default:"—"|floatformat:0|intcomma }}</span>
+      </div>
+      {% if payment_request.amount_actual and payment_request.amount_approved %}
+        {% with variance=payment_request.amount_variance %}
+        {% if variance is not None %}
+        <div style="border-top:1px solid var(--border);padding-top:8px;display:flex;justify-content:space-between;align-items:center;font-size:12.5px">
+          <span style="color:var(--muted);font-weight:500">Variance</span>
+          <span style="font-weight:700;color:{% if payment_request.amount_actual > payment_request.amount_approved %}var(--danger){% else %}var(--success){% endif %}">
+            {% if payment_request.amount_actual > payment_request.amount_approved %}▲ OVERSPENT{% else %}▼ SAVINGS{% endif %}
+            TZS {{ variance|floatformat:0|intcomma }}
+          </span>
+        </div>
+        {% endif %}
+        {% endwith %}
+      {% endif %}
+    </div>
+
+    <!-- Uploaded Receipts -->
+    {% with receipts=payment_request.documents.all %}
+    {% if receipts %}
+    <div style="margin-bottom:14px">
+      <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:8px">Uploaded Receipts</div>
+      {% for doc in receipts %}
+      {% if doc.is_retirement_doc %}
+      <a href="{{ doc.file.url }}" target="_blank" style="display:flex;align-items:center;gap:9px;padding:8px 11px;background:var(--surf);border-radius:8px;margin-bottom:5px;text-decoration:none;border:1px solid var(--border);transition:border-color 0.15s">
+        <i class="bi bi-file-earmark-pdf" style="font-size:16px;color:var(--danger)"></i>
+        <span style="font-size:12.5px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ doc.title|truncatechars:38 }}</span>
+        <i class="bi bi-box-arrow-up-right" style="font-size:11px;color:var(--muted)"></i>
+      </a>
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert-w aw-warning mb-3">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      No receipts uploaded by requester.
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Action buttons -->
+    <div class="d-flex gap-2">
+      <form method="post" action="{% url 'approvals:approve_retirement' payment_request.pk %}" style="flex:1">
+        {% csrf_token %}
+        <input type="hidden" name="remarks" value="Retirement verified and approved.">
+        <button type="submit" class="btn-w success w-100" onclick="return confirm('Approve retirement and CLOSE this request?')">
+          <i class="bi bi-check-circle"></i> Approve & Close
+        </button>
+      </form>
+      <div style="flex:1">
+        <button type="button" class="btn-w gold w-100" id="returnToggle_{{ payment_request.pk }}"
+          onclick="document.getElementById('returnFormWrap_{{ payment_request.pk }}').style.display='block';this.style.display='none'">
+          <i class="bi bi-arrow-return-left"></i> Return
+        </button>
+        <div id="returnFormWrap_{{ payment_request.pk }}" style="display:none;margin-top:8px">
+          <form method="post" action="{% url 'approvals:return_retirement' payment_request.pk %}">
+            {% csrf_token %}
+            <textarea name="remarks" class="form-control mb-2" rows="2" placeholder="Reason for returning…" required style="font-size:13px"></textarea>
+            <button type="submit" class="btn-w gold w-100"><i class="bi bi-send"></i> Send Return</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endif %}
+
+{% endwith %}

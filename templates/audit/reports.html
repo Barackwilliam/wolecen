@@ -1,0 +1,195 @@
+{% extends "base/base.html" %}
+{% load humanize %}
+
+{% block title %}Reports — Wolecen EGL{% endblock %}
+{% block page_title %}Reports & Analytics{% endblock %}
+
+{% block content %}
+
+<div class="page-hd fade-up">
+  <div>
+    <h4>Reports & Analytics</h4>
+    <p>Financial overview and payment statistics</p>
+  </div>
+  <a href="{% url 'payments:export_excel' %}" class="btn-w-out">
+    <i class="bi bi-file-excel"></i> Export Excel
+  </a>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card primary">
+      <i class="bi bi-file-earmark-text-fill bg-icon"></i>
+      <div class="stat-icon primary"><i class="bi bi-file-earmark-text-fill"></i></div>
+      <div class="stat-value">{{ stats.total_requests }}</div>
+      <div class="stat-label">Total Requests</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card success">
+      <i class="bi bi-cash-stack bg-icon"></i>
+      <div class="stat-icon success"><i class="bi bi-cash-stack"></i></div>
+      <div class="stat-value" style="font-size:20px">{{ stats.total_paid|floatformat:0|intcomma }}</div>
+      <div class="stat-label">TZS Total Paid</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card warning">
+      <i class="bi bi-x-circle bg-icon"></i>
+      <div class="stat-icon warning"><i class="bi bi-x-circle-fill"></i></div>
+      <div class="stat-value">{{ stats.rejected_count }}</div>
+      <div class="stat-label">Rejected</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card danger">
+      <i class="bi bi-receipt-cutoff bg-icon"></i>
+      <div class="stat-icon danger"><i class="bi bi-receipt-cutoff"></i></div>
+      <div class="stat-value">{{ stats.pending_retirement }}</div>
+      <div class="stat-label">Pending Retirement</div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts row -->
+<div class="row g-4 mb-4">
+  <div class="col-12 col-lg-7 fade-up" style="animation-delay:0.12s">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-bar-chart-line"></i> Monthly Request Trend (Last 6 Months)</div>
+      <div class="card-body">
+        <canvas id="trendChart" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-5 fade-up" style="animation-delay:0.16s">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-pie-chart"></i> Requests by Status</div>
+      <div class="card-body">
+        <canvas id="statusChart" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tables row -->
+<div class="row g-4">
+  <div class="col-12 col-lg-6 fade-up" style="animation-delay:0.20s">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-building"></i> Top Departments by Amount</div>
+      <div class="card-body p-0">
+        {% for dept in by_dept %}
+        <div style="padding:13px 18px;{% if not forloop.last %}border-bottom:1px solid var(--border){% endif %}">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span style="font-size:13.5px;font-weight:600">{{ dept.department__name|default:"Unknown" }}</span>
+            <span style="font-size:12.5px;font-weight:700;color:var(--p);font-family:var(--font-display)">{{ dept.total|floatformat:0|intcomma }} <span style="font-size:10px;font-weight:400;color:var(--muted);font-family:var(--font-body)">TZS</span></span>
+          </div>
+          <div class="d-flex align-items-center gap-3">
+            <div style="flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden">
+              {% with max_total=by_dept.0.total %}{% if max_total %}
+              <div style="height:100%;background:linear-gradient(90deg,var(--p),var(--p2));border-radius:3px;width:{% widthratio dept.total max_total 100 %}%;transition:width 0.6s ease"></div>
+              {% endif %}{% endwith %}
+            </div>
+            <span style="font-size:11.5px;color:var(--muted);flex-shrink:0">{{ dept.count }} req</span>
+          </div>
+        </div>
+        {% empty %}
+        <div class="card-body text-center" style="color:var(--muted);font-size:13px">No data available</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-6 fade-up" style="animation-delay:0.24s">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-table"></i> Request Status Breakdown</div>
+      <div class="tbl-wrap">
+        <table class="table tbl mb-0">
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Count</th>
+              <th>Total Amount (TZS)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in by_status %}
+            <tr>
+              <td>
+                <span class="badge-s {% if 'APPROVED' in item.status or 'CLOSED' in item.status %}bs-approved{% elif 'REJECTED' in item.status %}bs-rejected{% elif 'PAID' in item.status %}bs-paid{% else %}bs-pending{% endif %}">
+                  {{ item.status }}
+                </span>
+              </td>
+              <td style="font-weight:700">{{ item.count }}</td>
+              <td style="font-weight:600;font-family:var(--font-display)">{{ item.total|default:0|floatformat:0|intcomma }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const primary = '#0A2463';
+const success = '#12B886';
+const warn    = '#F59E0B';
+const danger  = '#E63946';
+const border  = '#E4E9F2';
+
+// Monthly Trend
+new Chart(document.getElementById('trendChart'), {
+  type: 'bar',
+  data: {
+    labels: [{% for m in monthly %}'{{ m.month }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+      label: 'Requests',
+      data: [{% for m in monthly %}{{ m.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+      backgroundColor: primary + 'CC',
+      borderColor: primary,
+      borderWidth: 0,
+      borderRadius: 8,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: border }, ticks: { font: { size: 11, family: "'Plus Jakarta Sans', sans-serif" } } },
+      x: { grid: { display: false }, ticks: { font: { size: 11, family: "'Plus Jakarta Sans', sans-serif" } } }
+    }
+  }
+});
+
+// Status Donut
+new Chart(document.getElementById('statusChart'), {
+  type: 'doughnut',
+  data: {
+    labels: [{% for item in by_status %}'{{ item.status }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+      data: [{% for item in by_status %}{{ item.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+      backgroundColor: [primary, success, warn, danger, '#8B5CF6', '#3B82F6', '#0EA5E9', '#14B8A6'],
+      borderWidth: 3,
+      borderColor: '#fff',
+      hoverOffset: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    cutout: '68%',
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { font: { size: 11, family: "'Plus Jakarta Sans', sans-serif" }, padding: 14, usePointStyle: true }
+      }
+    }
+  }
+});
+</script>
+{% endblock %}
